@@ -36,8 +36,8 @@ void setup() {
     Serial.println(" <ERROR> Could not set up mDNS");
 
   server.on("/", HTTP_GET, handleRoot);
-
   server.begin();
+
   Serial.println(" => Server HTTP started");
 }
 
