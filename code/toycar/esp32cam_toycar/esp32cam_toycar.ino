@@ -5,16 +5,13 @@
 #include "credentials.h"
 #include "definitions.h"
 
+#include "handlers.h"
 #include "html.h"
 
 const char* ssid = NETWORK;
 const char* password = PASSWORD;
 
 WebServer server(80);
-
-void handleRoot() {
-  server.send(200, "text/html", html_index);
-}
 
 void setup() {
   Serial.begin(115200);
