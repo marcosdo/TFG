@@ -5,13 +5,13 @@
 #include "credentials.h"
 #include "definitions.h"
 
-#include "handlers.h"
+#include "MyWebServer.h"
 #include "html.h"
 
 const char* ssid = NETWORK;
 const char* password = PASSWORD;
 
-WebServer server(80);
+MyWebServer mws(80);
 
 void setup() {
   Serial.begin(115200);
@@ -23,21 +23,18 @@ void setup() {
   }
   Serial.println(" Done!\n");
 
-  Serial.print(" => Conectado a la red Wi-Fi: ");
-  Serial.println(ssid);
-  Serial.print(" => Dirección IP: ");
-  Serial.println(WiFi.localIP());
+  Serial.println(" => Conectado a la red Wi-Fi: " + String(ssid));
+  Serial.println(" => Dirección IP: " + WiFi.localIP().toString());
 
   MDNS.begin("esp32tfg") ? 
     Serial.println(" => MDNS responder started") :
     Serial.println(" <ERROR> Could not set up mDNS");
 
-  server.on("/", HTTP_GET, handleRoot);
-  server.begin();
+  mws.setupServer();
 
   Serial.println(" => Server HTTP started");
 }
 
 void loop() {
-  server.handleClient();
+  mws.handleLoop();
 }
