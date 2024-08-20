@@ -57,21 +57,20 @@ R"HTML_INDEX(
   </head>
   <body>
     <div id="videoContainer">
-      <img id="videoStream" src="http://your_esp32cam_ip/capture" alt="Camera Stream">
+      <img id="videoStream" src="http://192.168.1.54/capture" alt="Camera Stream">
     </div>
     <div class="button-container">
-      <button class="control-button" style="grid-area: 1 / 2;">Up</button>
-      <button class="control-button" style="grid-area: 2 / 1;">Left</button>
-      <button class="control-button" style="grid-area: 2 / 3;">Right</button>
-      <button class="control-button" style="grid-area: 3 / 2;">Down</button>
+      <button class="control-button" style="grid-area: 1 / 2;">&#8593;</button>
+      <button class="control-button" style="grid-area: 2 / 1;">&#8592;</button>
+      <button class="control-button" style="grid-area: 2 / 3;">&#8594;</button>
+      <button class="control-button" style="grid-area: 3 / 2;">&#8595;</button>
     </div>
 
     <script>
-      // Replace 'your_esp32cam_ip' with the actual IP address of your ESP32-CAM
       const videoStream = document.getElementById('videoStream');
       const refreshRate = 1000; // Refresh rate in milliseconds
       function updateImage() {
-          videoStream.src = `http://your_esp32cam_ip/capture?t=${new Date().getTime()}`;
+          videoStream.src = `http://192.168.1.54/capture?t=${new Date().getTime()}`;
       }
       setInterval(updateImage, refreshRate);
     </script>

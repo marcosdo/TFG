@@ -1,12 +1,10 @@
 #include <WiFi.h>
-#include <WebServer.h>
 #include <ESPmDNS.h>
 
 #include "credentials.h"
 #include "definitions.h"
 
 #include "MyWebServer.h"
-#include "html.h"
 
 const char* ssid = NETWORK;
 const char* password = PASSWORD;
