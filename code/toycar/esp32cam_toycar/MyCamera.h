@@ -57,7 +57,7 @@ MyCamera::MyCamera() {
 
   _conf.grab_mode     = CAMERA_GRAB_LATEST;
   _conf.fb_location   = CAMERA_FB_IN_PSRAM;
-  _conf.jpeg_quality  = 10;
+  _conf.jpeg_quality  = 16;
   _conf.fb_count      = 4;
 
   setupLEDFlash(LED_GPIO_NUM);
@@ -88,7 +88,6 @@ void MyCamera::startStream() {
 inline camera_fb_t *MyCamera::captureFrame() {
   return esp_camera_fb_get();
 }
-
 
 // ===========================
 // Getters and seters
