@@ -30,7 +30,7 @@ private:
 // ===========================
 // Constructor and destructor
 // ===========================
-MyCamera::MyCamera() { 
+MyCamera::MyCamera() {
   // pin configuration
   _conf.ledc_channel  = LEDC_CHANNEL_0;
   _conf.ledc_timer    = LEDC_TIMER_0;
@@ -57,22 +57,8 @@ MyCamera::MyCamera() {
 
   _conf.grab_mode     = CAMERA_GRAB_WHEN_EMPTY;
   _conf.fb_location   = CAMERA_FB_IN_PSRAM;
-  _conf.jpeg_quality  = 1;
-  _conf.fb_count      = 1;
-
-  // If PSRAM IC present, init with UXGA resolution and higher JPEG quality
-  //                      for larger pre-allocated frame buffer.
-  if (_conf.pixel_format == PIXFORMAT_JPEG) {
-    if (psramFound()) {
-      _conf.jpeg_quality  = 10;
-      _conf.fb_count      = 2;
-      _conf.grab_mode     = CAMERA_GRAB_LATEST;
-    } else {
-      // Limit the frame size when PSRAM is not available
-      _conf.frame_size  = FRAMESIZE_SVGA;
-      _conf.fb_location = CAMERA_FB_IN_DRAM;
-    }
-  }
+  _conf.jpeg_quality  = 10;
+  _conf.fb_count      = 4;
 
   setupLEDFlash(LED_GPIO_NUM);
 }
@@ -116,17 +102,9 @@ void MyCamera::setResolution(framesize_t resolution) {
     _sens->set_saturation(_sens, -2);  // lower the saturation
   }
 
-  framesize_t res;
-  
-  #ifndef FRAMESIZE_QVGA
-    res = resolution;
-  #else
-    res = FRAMESIZE_QVGA;
-  #endif
-
   // drop down frame size for higher initial frame rate
   if (_conf.pixel_format == PIXFORMAT_JPEG) {
-    _sens->set_framesize(_sens, res);
+    _sens->set_framesize(_sens, resolution);
   }
 }
 

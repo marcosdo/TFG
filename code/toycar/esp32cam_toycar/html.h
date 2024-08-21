@@ -68,7 +68,7 @@ R"HTML_INDEX(
 
     <script>
       const videoStream = document.getElementById('videoStream');
-      const refreshRate = 1000; // Refresh rate in milliseconds
+      const refreshRate = 100; // Refresh rate in milliseconds
       function updateImage() {
           videoStream.src = `http://192.168.1.54/capture?t=${new Date().getTime()}`;
       }

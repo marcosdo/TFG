@@ -13,6 +13,7 @@ const char* password = PASSWORD;
 MyCamera cam;
 MyWebServer mws(cam, 80);
 
+
 void setup() {
   Serial.begin(115200);
 
