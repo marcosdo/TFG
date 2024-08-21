@@ -5,15 +5,20 @@
 #include "definitions.h"
 
 #include "MyWebServer.h"
+#include "MyCamera.h"
 
 const char* ssid = NETWORK;
 const char* password = PASSWORD;
 
-MyWebServer mws(80);
+MyCamera cam;
+MyWebServer mws(cam, 80);
 
 void setup() {
   Serial.begin(115200);
 
+  // ===========================
+  // Setting up the server
+  // ===========================
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
@@ -31,6 +36,16 @@ void setup() {
   mws.setupServer();
 
   Serial.println(" => Server HTTP started");
+
+  // ===========================
+  // Setting up the camera
+  // ===========================
+  if (!cam.initCamera()) {
+    Serial.println(" <ERROR> Initializing camera");
+    return;
+  }
+
+  cam.startStream();
 }
 
 void loop() {

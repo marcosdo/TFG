@@ -1,6 +1,8 @@
 #ifndef DEFINITIONS_H
 #define DEFINITIONS_H
 
+#define CAMERA_MODEL_AI_THINKER // Has PSRAM
+
 #if defined(CAMERA_MODEL_AI_THINKER)
   #define PWDN_GPIO_NUM  32
   #define RESET_GPIO_NUM -1
@@ -19,7 +21,7 @@
   #define VSYNC_GPIO_NUM 25
   #define HREF_GPIO_NUM  23
   #define PCLK_GPIO_NUM  22
-  
+
   #define LED_GPIO_NUM   4
 #else
   #error "Camera model not selected"
