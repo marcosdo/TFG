@@ -52,10 +52,10 @@ MyCamera::MyCamera() {
   _conf.pin_reset     = RESET_GPIO_NUM;
 
   _conf.xclk_freq_hz  = 20000000;
-  _conf.frame_size    = FRAMESIZE_UXGA;
+  _conf.frame_size    = FRAMESIZE_QVGA;
   _conf.pixel_format  = PIXFORMAT_JPEG;
 
-  _conf.grab_mode     = CAMERA_GRAB_WHEN_EMPTY;
+  _conf.grab_mode     = CAMERA_GRAB_LATEST;
   _conf.fb_location   = CAMERA_FB_IN_PSRAM;
   _conf.jpeg_quality  = 10;
   _conf.fb_count      = 4;
