@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP32-CAM Video Stream</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div id="header">Hola</div>
+  <div id="videoContainer">
+    <img id="videoStream" src="http://192.168.1.54/capture" alt="Camera Stream">
+  </div>
+  <div id="controls">
+    <button id="arrow-button" style="grid-area: 1 / 2;">▲</button>
+    <button id="arrow-button" style="grid-area: 2 / 1;">◄</button>
+    <button id="arrow-button" style="grid-area: 2 / 3;">►</button>
+    <button id="arrow-button" style="grid-area: 2 / 2;">▼</button>
+  </div>
+  <script src="script.js"></script>
+</body>
+
+</html>
