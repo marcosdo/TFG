@@ -68,10 +68,15 @@ R"HTML_INDEX(
 
     <script>
       const videoStream = document.getElementById('videoStream');
-      const refreshRate = 17; // 1000 ms / 59 pfs = 17 ms refresh rate
+      const refreshRate = 100;
       function updateImage() {
-          videoStream.src = `http://192.168.1.54/capture?t=${new Date().getTime()}`;
+        videoStream.src = `http://192.168.1.54/capture?t=${new Date().getTime()}`;
       }
+
+      videoStream.onerror = function() {
+        setTimeout(updateImage, refreshRate + refreshRate); 
+      };
+
       setInterval(updateImage, refreshRate);
     </script>
   </body>
