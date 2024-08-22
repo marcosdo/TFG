@@ -6,7 +6,7 @@
 #include <functional>
 
 #include "MyCamera.h"
-#include "html.h"
+#include "webcode.h"
 
 class MyWebServer {
 private:
@@ -49,7 +49,7 @@ void MyWebServer::handleLoop() {
 // ===========================
 void MyWebServer::handleRoot() {
   Serial.println(" => Access to handleRoot()");
-  _server.send(200, "text/html", html_index);
+  _server.send(200, "text/html", index_html);
 }
 
 void MyWebServer::handleStream() {
