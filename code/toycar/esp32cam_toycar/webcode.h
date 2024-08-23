@@ -125,14 +125,14 @@ R"rawliteral(
   </div>
   <script>
     const videoStream = document.getElementById('videoStream');
-    const refreshRate = 20;
+    const refreshRate = 100;
 
     function updateImage() {
       videoStream.src = `http://192.168.1.54/capture?t=${new Date().getTime()}`;
     }
 
     videoStream.onerror = function() {
-      setTimeout(updateImage, refreshRate); // Reintenta la carga en caso de error
+      setTimeout(updateImage, refreshRate + refreshRate);
     };
 
     setInterval(updateImage, refreshRate);
