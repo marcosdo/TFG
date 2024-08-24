@@ -28,9 +28,7 @@ void setup() {
 
   Serial.println(" => Conectado a la red Wi-Fi: " + String(ssid));
   Serial.println(" => Dirección IP: " + WiFi.localIP().toString());
-
   mws.setupServer();
-
   Serial.println(" => WebSocket server started");
 
   // ===========================

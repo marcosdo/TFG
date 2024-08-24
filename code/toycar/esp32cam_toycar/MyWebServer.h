@@ -8,7 +8,7 @@
 
 #include "MyCamera.h"
 
-#include "handlers.h"
+#include "webcode.h"
 
 class MyWebServer {
 private:
@@ -31,7 +31,9 @@ public:
 
 private:
   void handleNotFound(AsyncWebServerRequest *request);
-  void handleRoot(AsyncWebServerRequest *request);
+  void handle_html(AsyncWebServerRequest *request);
+  void handle_ico(AsyncWebServerRequest *request);
+  void handle_css(AsyncWebServerRequest *request);
   void handleStream();
   void handleFPS();
 
@@ -64,8 +66,9 @@ MyWebServer::MyWebServer(MyCamera &cam, int port) :
 // Public methods
 // ===========================
 void MyWebServer::setupServer() {
-  _server.on("/", HTTP_GET, [this](AsyncWebServerRequest *request) { this->handleRoot(request); });
-  //_server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){ request->send_P(200, "image/x-icon", favicon_ico, sizeof(favicon_ico)); })
+  _server.on("/", HTTP_GET, [this](AsyncWebServerRequest *request) { this->handle_html(request); });
+  _server.on("/favicon.ico", HTTP_GET, [this](AsyncWebServerRequest *request){ this->handle_ico(request); });
+  _server.on("/style.css", HTTP_GET, [this](AsyncWebServerRequest *request){ this->handle_css(request); });
 
   _server.onNotFound([this](AsyncWebServerRequest *request){ this->handleNotFound(request); });
 
@@ -99,9 +102,19 @@ void MyWebServer::handleLoop() {
 // ===========================
 // Private methods
 // ===========================
-void MyWebServer::handleRoot(AsyncWebServerRequest *request) {
-  Serial.println(" => Access to '/' - handleRoot(..)");
+void MyWebServer::handle_html(AsyncWebServerRequest *request) {
+  Serial.println(" => Access to '/' - handle_html(..)");
   request->send(200, "text/html", index_html);
+}
+
+void MyWebServer::handle_ico(AsyncWebServerRequest *request) {
+  Serial.println(" => Access to '/favicon.ico' - handle_ico(..)");
+  request->send_P(200, "image/x-icon", favicon_ico, sizeof(favicon_ico));
+}
+
+void MyWebServer::handle_css(AsyncWebServerRequest *request) {
+  Serial.println(" => Access to '/style.css' - handle_css(..)");
+  request->send_P(200, "text/css", style_css);
 }
 
 void MyWebServer::handleNotFound(AsyncWebServerRequest *request) {
