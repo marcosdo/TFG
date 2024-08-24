@@ -21,6 +21,7 @@ private:
   int             _iter;
   unsigned long   _lastFrameTime;
   int             _clientID;
+  bool            _open;
 
 public:
   MyWebServer(MyCamera &cam, int port = 80);
@@ -59,7 +60,8 @@ MyWebServer::MyWebServer(MyCamera &cam, int port) :
   _lastFrameTime(0), 
   _sum(0), 
   _iter(1),
-  _clientID(0)
+  _clientID(0),
+  _open(true)
 { }
 
 // ===========================
@@ -148,8 +150,15 @@ void MyWebServer::onEventCamera(
       Serial.printf(" => WebSocket client #%u disconnected\n", client->id());
     break;
 
-    case WS_EVT_DATA: 
-    break;
+    case WS_EVT_DATA: {
+      AwsFrameInfo * info = (AwsFrameInfo*)arg;
+      if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+        String msg = (char*)data;
+        if (msg.indexOf("ack") >= 0) {
+          _open = true;
+        }
+      }
+    } break;
 
     default: break;
   }
@@ -157,13 +166,12 @@ void MyWebServer::onEventCamera(
 
 
 void MyWebServer::handleStream() {
-  if (_clientID == 0)
+  if (_clientID == 0 || _wsCam.client(_clientID)->queueIsFull())
     return;
 
   camera_fb_t *fb = _cam.captureFrame();
   if (!fb) {
     Serial.println(" <ERROR> Frame capture");
-    //_server.send(503, "text/plain", "<ERROR> Frame capture");
     return;
   }
 
@@ -175,7 +183,7 @@ void MyWebServer::handleStream() {
     if (!clientPointer || !(clientPointer->queueIsFull())) {
       break;
     }
-    delay(1);
+    delay(10);
   }
 }
 

@@ -31,6 +31,7 @@ R"rawliteral(
   <script>
     var wsCam;
     var wsCamURL = "ws://" + window.location.hostname + "/wsCam";
+    var url = null;
     
     function initWebSockCam() {
       wsCam = new WebSocket(wsCamURL);
@@ -44,10 +45,14 @@ R"rawliteral(
         };
         wsCam.onmessage = function(event) {
           var blob = event.data;
+          if (url) {
+            URL.revokeObjectURL(url);
+          }
           var imageID = document.getElementById("videoStream");
-          var url = URL.createObjectURL(blob);
+          url = URL.createObjectURL(blob);
           imageID.src = url;
-          URL.revokeObjectURL(url);
+
+          wsCam.send(JSON.stringify({ type: "ack", status: "received" }));
         };
         wsCam.onerror = function(error) {
           console.log(' => wsCam error: ' + error.message);
