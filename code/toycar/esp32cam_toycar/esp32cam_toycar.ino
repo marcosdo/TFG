@@ -21,6 +21,7 @@ void setup() {
   // Setting up the server
   // ===========================
   WiFi.begin(ssid, password);
+  Serial.print(" Connecting ...");
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.print(".");

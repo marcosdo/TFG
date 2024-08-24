@@ -123,9 +123,22 @@ R"rawliteral(
     <button id="arrow-button" style="grid-area: 2 / 3;">►</button>
     <button id="arrow-button" style="grid-area: 2 / 2;">▼</button>
   </div>
+  <div id ="show-fps">
+    <span id="fpsDisplay">FPS: N/A</span>
+  </div>
+
   <script>
     const videoStream = document.getElementById('videoStream');
     const refreshRate = 100;
+
+    function updateFPS() {
+      fetch('http://192.168.1.54/fps')
+        .then(response => response.text())
+        .then(fps => {
+            document.getElementById("fpsDisplay").innerText = "FPS: " + fps;
+        })
+        .catch(error => console.error('Error fetching FPS:', error));
+    }
 
     function updateImage() {
       videoStream.src = `http://192.168.1.54/capture?t=${new Date().getTime()}`;
@@ -136,7 +149,8 @@ R"rawliteral(
     };
 
     setInterval(updateImage, refreshRate);
-      
+    setInterval(updateFPS, refreshRate);
+    
   </script>
 </body>
 </html>

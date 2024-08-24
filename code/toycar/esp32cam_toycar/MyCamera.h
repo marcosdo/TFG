@@ -70,7 +70,7 @@ MyCamera::~MyCamera() { }
 bool MyCamera::initCamera() {
   // camera init
   if ((_err = esp_camera_init(&_conf)) != ESP_OK) {
-    Serial.printf("Camera init failed with error 0x%x", _err);
+    Serial.printf(" <ERROR> Camera init failed with error 0x%x", _err);
     return false;
   }
   return true;
@@ -86,6 +86,7 @@ void MyCamera::startStream() {
 }
 
 inline camera_fb_t *MyCamera::captureFrame() {
+  //Serial.println("flood");
   return esp_camera_fb_get();
 }
 
