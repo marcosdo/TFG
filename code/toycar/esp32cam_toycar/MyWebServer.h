@@ -1,76 +1,169 @@
 #ifndef MYWEBSERVER_H
 #define MYWEBSERVER_H
 
-#include <WebServer.h>
+#include <ESPAsyncWebServer.h>
+#include <AsyncTCP.h>
 
 #include <functional>
 
 #include "MyCamera.h"
-#include "webcode.h"
+
+#include "handlers.h"
 
 class MyWebServer {
 private:
-  WebServer       _server;
+  AsyncWebServer  _server;
+  AsyncWebSocket  _wsCam;
+  AsyncWebSocket  _wsFPS;
   MyCamera      & _cam;
   float           _fps;
   float           _sum;
   int             _iter;
   unsigned long   _lastFrameTime;
+  int             _clientID;
+
 public:
   MyWebServer(MyCamera &cam, int port = 80);
-  ~MyWebServer();
+  ~MyWebServer() {};
 
   void setupServer();
   void handleLoop();
 
 private:
-  void handleRoot();
+  void handleNotFound(AsyncWebServerRequest *request);
+  void handleRoot(AsyncWebServerRequest *request);
   void handleStream();
   void handleFPS();
+
+  void onEventCamera(
+    AsyncWebSocket        * server, 
+    AsyncWebSocketClient  * client, 
+    AwsEventType            type, 
+    void                  * arg, 
+    uint8_t               * data, 
+    size_t                  len
+  );
 };
 
 // ===========================
 // Constructor and destructor
 // ===========================
-MyWebServer::MyWebServer(MyCamera &cam, int port) 
-  : _server(port), _cam(cam), _fps(0.0), _lastFrameTime(0), _sum(0), _iter(1) { }
-MyWebServer::~MyWebServer() { }
+MyWebServer::MyWebServer(MyCamera &cam, int port) : 
+  _server(port), 
+  _wsCam("/wsCam"), 
+  _wsFPS("/wsFPS"), 
+  _cam(cam), 
+  _fps(0.0),
+  _lastFrameTime(0), 
+  _sum(0), 
+  _iter(1),
+  _clientID(0)
+{ }
 
 // ===========================
 // Public methods
 // ===========================
 void MyWebServer::setupServer() {
-  _server.on("/", HTTP_GET, std::bind(&MyWebServer::handleRoot, this));
-  _server.on("/capture", HTTP_GET, std::bind(&MyWebServer::handleStream, this));
-  _server.on("/fps", HTTP_GET, std::bind(&MyWebServer::handleFPS, this));
+  _server.on("/", HTTP_GET, [this](AsyncWebServerRequest *request) { this->handleRoot(request); });
+  //_server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){ request->send_P(200, "image/x-icon", favicon_ico, sizeof(favicon_ico)); })
+
+  _server.onNotFound([this](AsyncWebServerRequest *request){ this->handleNotFound(request); });
+
+  _wsCam.onEvent(
+    [this](
+      AsyncWebSocket        * server,
+      AsyncWebSocketClient  * client,
+      AwsEventType            type, 
+      void                  * arg, 
+      uint8_t               * data, 
+      size_t                  len
+    ) {
+      this->onEventCamera(server, client, type, arg, data, len);
+    }
+  );
+
+  _server.addHandler(&_wsCam);
+  _server.addHandler(&_wsFPS);
+
   _server.begin();
 }
 
 void MyWebServer::handleLoop() {
-  _server.handleClient();
+  handleStream();
+  //handleFPS();
+
+  _wsCam.cleanupClients();
+  _wsFPS.cleanupClients();
 }
 
 // ===========================
 // Private methods
 // ===========================
-void MyWebServer::handleRoot() {
-  Serial.println(" => Access to '/' - handleRoot()");
-  _server.send(200, "text/html", index_html);
+void MyWebServer::handleRoot(AsyncWebServerRequest *request) {
+  Serial.println(" => Access to '/' - handleRoot(..)");
+  request->send(200, "text/html", index_html);
 }
 
-void MyWebServer::handleStream() {
-  camera_fb_t *fb = _cam.captureFrame();
+void MyWebServer::handleNotFound(AsyncWebServerRequest *request) {
+  Serial.println(" <ERROR> Access to handleNotFound(..)");
 
+  String message = "File Not Found \n\n URI: ";
+    message += request->url();
+    message += "\n Method: ";
+    message += (request->method() == HTTP_GET) ? "GET\n" : "POST\n";
+  request->send(404, "text/plain", message);
+}
+
+void MyWebServer::onEventCamera(
+  AsyncWebSocket        * server, 
+  AsyncWebSocketClient  * client, 
+  AwsEventType            type, 
+  void                  * arg, 
+  uint8_t               * data, 
+  size_t                  len
+) {
+  switch (type) {
+    case WS_EVT_CONNECT: 
+      _clientID = client->id();
+      Serial.printf(" => WebSocket client #%u connected from %s\n", 
+        _clientID, client->remoteIP().toString().c_str()
+      );
+    break;
+
+    case WS_EVT_DISCONNECT: 
+      _clientID = 0;
+      Serial.printf(" => WebSocket client #%u disconnected\n", client->id());
+    break;
+
+    case WS_EVT_DATA: 
+    break;
+
+    default: break;
+  }
+}
+
+
+void MyWebServer::handleStream() {
+  if (_clientID == 0)
+    return;
+
+  camera_fb_t *fb = _cam.captureFrame();
   if (!fb) {
     Serial.println(" <ERROR> Frame capture");
-    _server.send(503, "text/plain", "<ERROR> Frame capture");
+    //_server.send(503, "text/plain", "<ERROR> Frame capture");
     return;
   }
 
-  _server.sendHeader("Content-Type", "image/jpeg");
-  _server.sendHeader("Content-Length", String(fb->len));
-  _server.send_P(200, "image/jpeg", reinterpret_cast<const char*>(fb->buf), fb->len);
+  _wsCam.binary(_clientID, fb->buf, fb->len);
   esp_camera_fb_return(fb);
+
+  while (true) {
+    AsyncWebSocketClient * clientPointer = _wsCam.client(_clientID);
+    if (!clientPointer || !(clientPointer->queueIsFull())) {
+      break;
+    }
+    delay(1);
+  }
 }
 
 void MyWebServer::handleFPS() {
@@ -82,10 +175,8 @@ void MyWebServer::handleFPS() {
 
   float avg = _sum / _iter++;
 
-  if (_iter % 30 == 0) // Do not flood the serial monitor
+  if (_iter % 1000000 == 0) // Do not flood the serial monitor
     Serial.println(" => FPS: Avg = " + String(avg) + " | Act = " + String(_fps));
-  
-  _server.send(200, "text/plain", String(_fps));
 }
 
 #endif

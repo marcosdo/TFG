@@ -1,8 +1,6 @@
 #include <WiFi.h>
-#include <ESPmDNS.h>
 
 #include "credentials.h"
-#include "definitions.h"
 
 #include "MyWebServer.h"
 #include "MyCamera.h"
@@ -31,13 +29,9 @@ void setup() {
   Serial.println(" => Conectado a la red Wi-Fi: " + String(ssid));
   Serial.println(" => Dirección IP: " + WiFi.localIP().toString());
 
-  MDNS.begin("esp32tfg") ? 
-    Serial.println(" => MDNS responder started") :
-    Serial.println(" <ERROR> Could not set up mDNS");
-
   mws.setupServer();
 
-  Serial.println(" => Server HTTP started");
+  Serial.println(" => WebSocket server started");
 
   // ===========================
   // Setting up the camera

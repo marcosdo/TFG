@@ -7,6 +7,7 @@ R"rawliteral(
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- <link rel="icon" href="/favicon.ico" type="image/x-icon"> -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ESP32-CAM</title>
@@ -115,7 +116,7 @@ R"rawliteral(
 <body>
   <div id="header">TFG Coche teledirigido</div>
   <div id="videoContainer">
-    <img id="videoStream" src="http://192.168.1.54/capture" alt="Camera Stream">
+    <img id="videoStream" src="" alt="Camera Stream">
   </div>
   <div id="controls">
     <button id="arrow-button" style="grid-area: 1 / 2;">▲</button>
@@ -128,29 +129,36 @@ R"rawliteral(
   </div>
 
   <script>
-    const videoStream = document.getElementById('videoStream');
-    const refreshRate = 100;
-
-    function updateFPS() {
-      fetch('http://192.168.1.54/fps')
-        .then(response => response.text())
-        .then(fps => {
-            document.getElementById("fpsDisplay").innerText = "FPS: " + fps;
-        })
-        .catch(error => console.error('Error fetching FPS:', error));
-    }
-
-    function updateImage() {
-      videoStream.src = `http://192.168.1.54/capture?t=${new Date().getTime()}`;
-    }
-
-    videoStream.onerror = function() {
-      setTimeout(updateImage, refreshRate + refreshRate);
-    };
-
-    setInterval(updateImage, refreshRate);
-    setInterval(updateFPS, refreshRate);
+    var wsCam;
+    var wsCamURL = "ws://" + window.location.hostname + "/wsCam";
     
+    function initWebSockCam() {
+      wsCam = new WebSocket(wsCamURL);
+      wsCam.binaryType = 'blob';
+        wsCam.onopen    = function(event) {
+          console.log(" => wsCam connection opened");
+        };
+        wsCam.onclose   = function(event) {
+          console.log(" => wsCam connection closed");
+          setTimeout(initWebSockCam, 2000);
+        };
+        wsCam.onmessage = function(event) {
+          var blob = event.data;
+          var imageID = document.getElementById("videoStream");
+          var url = URL.createObjectURL(blob);
+          imageID.src = url;
+          URL.revokeObjectURL(url);
+        };
+        wsCam.onerror = function(error) {
+          console.log(' => wsCam error: ' + error.message);
+        };
+    }
+
+    function initWebSock() {
+      initWebSockCam();
+    }
+
+    window.onload = initWebSock;
   </script>
 </body>
 </html>
@@ -265,20 +273,11 @@ body {
 const char script_js[] PROGMEM = 
 R"rawliteral(
 
-const videoStream = document.getElementById('videoStream');
-const refreshRate = 100;
-
-function updateImage() {
-  videoStream.src = `http://your_esp32cam_ip/capture?t=${new Date().getTime()}`;
-}
-
-videoStream.onerror = function() {
-  setTimeout(updateImage, refreshRate); // Reintenta la carga en caso de error
-};
-
-setInterval(updateImage, refreshRate);
-
 )rawliteral";
 
+const char favicon_ico[] PROGMEM = 
+R"rawliteral(
+
+)rawliteral";
 
 #endif

@@ -86,7 +86,6 @@ void MyCamera::startStream() {
 }
 
 inline camera_fb_t *MyCamera::captureFrame() {
-  //Serial.println("flood");
   return esp_camera_fb_get();
 }
 
