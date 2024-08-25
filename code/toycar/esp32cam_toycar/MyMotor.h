@@ -17,13 +17,6 @@ private:
   const int _bridgeRevrs; // Pin <--> Bridge: Go backward
   const int _bridgeStart; // Pin <--> Bridge: Start-Stop
 
-  bool _startST;      // Motor ON-OFF
-  bool _prevStartST;  // Motor ON-OFF (previous)
-
-  bool _driveST;      // Motor forward-backward
-  bool _prevDriveST;  // Motor forward-backward (previous)
-
-
 public:
   MyMotor(int GPIO_BridgeDrive, int GPIO_BridgeReverse, int GPIO_BridgeStart);
   ~MyMotor() {};
@@ -35,12 +28,9 @@ public:
   void lock(int speed = MIN_SPEED);
   void breaks(int speed = MIN_SPEED);
 
-  void rampTo(int targetSpeed = 0, int delay = 1000);
-
-  void setSpeed(int newSpeed);
-
 private:
-
+  void rampTo(int targetSpeed = 0, int delay = 1000);
+  void setSpeed(int newSpeed);
 };
 
 // ===========================
@@ -54,7 +44,7 @@ MyMotor::MyMotor(int GPIO_BridgeDrive, int GPIO_BridgeReverse, int GPIO_BridgeSt
   _speed(MIN_SPEED),
   _accel(MIN_ACCELERATION),
   _direc(GO_FORWARD),
-  _freqz(1000),
+  _freqz(5000),
   _rsltn(8)
  {}
 
@@ -69,9 +59,7 @@ void MyMotor::setupMotor() {
   // Configuración de canal PWM usando la nueva API ledcAttach
   ledcAttach(_bridgeStart, _freqz, _rsltn);  // Pin, Frecuencia, Resolución
   // Inicia con el motor desactivado (0% de PWM)
-  ledcWrite(_bridgeStart, _speed);
-
-  lock();
+  ledcWrite(_bridgeStart, MIN_SPEED);
 }
 
 void MyMotor::forward(int speed) {
@@ -87,15 +75,15 @@ void MyMotor::backward(int speed) {
 }
 
 void MyMotor::breaks(int speed) {
+  rampTo(speed);
   digitalWrite(_bridgeDrive, LOW);
   digitalWrite(_bridgeRevrs, LOW);
-  rampTo(speed);
 }
 
 void MyMotor::lock(int speed) {
+  setSpeed(speed);
   digitalWrite(_bridgeDrive, LOW);
   digitalWrite(_bridgeRevrs, LOW);
-  setSpeed(speed);
 }
 
 void MyMotor::rampTo(int targetSpeed, int delayTotal) {

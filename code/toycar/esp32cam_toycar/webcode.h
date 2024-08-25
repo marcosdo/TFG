@@ -19,10 +19,10 @@ R"rawliteral(
     <img id="videoStream" src="" alt="Camera Stream">
   </div>
   <div id="controls">
-    <button id="arrow-button" style="grid-area: 1 / 2;">▲</button>
+    <button id="arrow-button" style="grid-area: 1 / 2;" onmousedown="sendCMD('D')" onmouseup="sendCMD('N')">▲</button>
     <button id="arrow-button" style="grid-area: 2 / 1;">◄</button>
     <button id="arrow-button" style="grid-area: 2 / 3;">►</button>
-    <button id="arrow-button" style="grid-area: 2 / 2;">▼</button>
+    <button id="arrow-button" style="grid-area: 2 / 2;" onmousedown="sendCMD('R')" onmouseup="sendCMD('N')">▼</button>
   </div>
   <div id ="show-fps">
     <span id="fpsDisplay">FPS: N/A</span>
@@ -30,37 +30,73 @@ R"rawliteral(
 
   <script>
     var wsCam;
+    var wsMotor;
+
     var wsCamURL = "ws://" + window.location.hostname + "/wsCam";
+    var wsMotorURL = "ws://" + window.location.hostname + "/wsMot";
+
     var url = null;
     
+    function sendCMD(command) {
+      console.log(" => sendCMD(..): " + command);
+      if (wsMotor.readyState === WebSocket.OPEN) {
+        wsMotor.send(command);
+      }
+    }
+
+    function initWebSockMotor() {
+      wsMotor = new WebSocket(wsMotorURL);
+
+      wsMotor.onopen  = function(event) {
+        console.log(" => wsMotor connection opened");
+      };
+
+      wsMotor.onclose = function(event) {
+        console.log(" => wsMot connection closed");
+        setTimeout(initWebSockMotor, 2000);
+      };
+
+      wsMotor.onmessage = function(event) {
+        console.log("Mensaje recibido: " + event.data);
+      };
+
+      wsMotor.onerror = function(error) {
+        console.log(" => wsMot error: " + error.message);
+      };
+    }
+
     function initWebSockCam() {
       wsCam = new WebSocket(wsCamURL);
-      wsCam.binaryType = 'blob';
-        wsCam.onopen    = function(event) {
-          console.log(" => wsCam connection opened");
-        };
-        wsCam.onclose   = function(event) {
-          console.log(" => wsCam connection closed");
-          setTimeout(initWebSockCam, 2000);
-        };
-        wsCam.onmessage = function(event) {
-          var blob = event.data;
-          if (url) {
-            URL.revokeObjectURL(url);
-          }
-          var imageID = document.getElementById("videoStream");
-          url = URL.createObjectURL(blob);
-          imageID.src = url;
 
-          wsCam.send(JSON.stringify({ type: "ack", status: "received" }));
-        };
-        wsCam.onerror = function(error) {
-          console.log(' => wsCam error: ' + error.message);
-        };
+      wsCam.binaryType = 'blob';
+
+      wsCam.onopen    = function(event) {
+        console.log(" => wsCam connection opened");
+      };
+
+      wsCam.onclose   = function(event) {
+        console.log(" => wsCam connection closed");
+        setTimeout(initWebSockCam, 2000);
+      };
+
+      wsCam.onmessage = function(event) {
+        var blob = event.data;
+        if (url) {
+          URL.revokeObjectURL(url);
+        }
+        var imageID = document.getElementById("videoStream");
+        url = URL.createObjectURL(blob);
+        imageID.src = url;
+      };
+
+      wsCam.onerror = function(error) {
+        console.log(" => wsCam error: " + error.message);
+      };
     }
 
     function initWebSock() {
       initWebSockCam();
+      initWebSockMotor();
     }
 
     window.onload = initWebSock;

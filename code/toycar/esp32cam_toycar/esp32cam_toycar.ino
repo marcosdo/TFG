@@ -3,13 +3,19 @@
 #include "credentials.h"
 
 #include "MyWebServer.h"
-#include "MyCamera.h"
 
 const char* ssid = NETWORK;
 const char* password = PASSWORD;
 
+const int pinForward = 12;
+const int pinBackward = 13;
+const int pinEnaleMotor = 15;
+
+const int port = 80;
+
 MyCamera cam;
-MyWebServer mws(cam, 80);
+MyMotor mot(pinForward, pinBackward, pinEnaleMotor);
+MyWebServer mws(cam, mot, port);
 
 
 void setup() {
@@ -38,8 +44,13 @@ void setup() {
     Serial.println(" <ERROR> Initializing camera");
     return;
   }
+  Serial.println("\n => Initiated camera");
 
-  cam.startStream();
+  // ===========================
+  // Setting up the motors
+  // ===========================
+  mot.setupMotor();
+  Serial.println(" => Initiated motor\n");
 }
 
 void loop() {

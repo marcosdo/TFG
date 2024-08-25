@@ -7,38 +7,55 @@
 #include <functional>
 
 #include "MyCamera.h"
+#include "MyMotor.h"
 
 #include "webcode.h"
 
 class MyWebServer {
 private:
-  AsyncWebServer  _server;
-  AsyncWebSocket  _wsCam;
-  AsyncWebSocket  _wsFPS;
-  MyCamera      & _cam;
-  float           _fps;
+  AsyncWebServer  _server;  // Server (usually :80)
+
+  AsyncWebSocket  _wsCam;   // WebSocket Camera
+  AsyncWebSocket  _wsMot;   // WebSocket Motor
+  AsyncWebSocket  _wsFPS;   // WebSocket FPS
+
+  MyCamera      & _cam;     // Camera
+  MyMotor       & _mot;     // Motor
+
+  float           _fps;     // FPS
   float           _sum;
   int             _iter;
   unsigned long   _lastFrameTime;
-  int             _clientID;
-  bool            _open;
+
+  int             _clientID;  // Conection - Client ID
 
 public:
-  MyWebServer(MyCamera &cam, int port = 80);
+  MyWebServer(MyCamera &cam, MyMotor &mot, int port = 80);
   ~MyWebServer() {};
 
   void setupServer();
   void handleLoop();
 
 private:
-  void handleNotFound(AsyncWebServerRequest *request);
   void handle_html(AsyncWebServerRequest *request);
   void handle_ico(AsyncWebServerRequest *request);
   void handle_css(AsyncWebServerRequest *request);
+
+  void handleNotFound(AsyncWebServerRequest *request);
+
   void handleStream();
+  void handleMotor();
   void handleFPS();
 
   void onEventCamera(
+    AsyncWebSocket        * server, 
+    AsyncWebSocketClient  * client, 
+    AwsEventType            type, 
+    void                  * arg, 
+    uint8_t               * data, 
+    size_t                  len
+  );
+  void onEventMotor(
     AsyncWebSocket        * server, 
     AsyncWebSocketClient  * client, 
     AwsEventType            type, 
@@ -51,17 +68,18 @@ private:
 // ===========================
 // Constructor and destructor
 // ===========================
-MyWebServer::MyWebServer(MyCamera &cam, int port) : 
+MyWebServer::MyWebServer(MyCamera &cam, MyMotor &mot, int port) : 
   _server(port), 
   _wsCam("/wsCam"), 
+  _wsMot("/wsMot"),
   _wsFPS("/wsFPS"), 
-  _cam(cam), 
+  _cam(cam),
+  _mot(mot),
   _fps(0.0),
   _lastFrameTime(0), 
   _sum(0), 
   _iter(1),
-  _clientID(0),
-  _open(true)
+  _clientID(0)
 { }
 
 // ===========================
@@ -86,8 +104,21 @@ void MyWebServer::setupServer() {
       this->onEventCamera(server, client, type, arg, data, len);
     }
   );
-
+  _wsMot.onEvent(
+    [this](
+      AsyncWebSocket        * server,
+      AsyncWebSocketClient  * client,
+      AwsEventType            type, 
+      void                  * arg, 
+      uint8_t               * data, 
+      size_t                  len
+    ) {
+      this->onEventMotor(server, client, type, arg, data, len);
+    }
+  );
+  
   _server.addHandler(&_wsCam);
+  _server.addHandler(&_wsMot);
   _server.addHandler(&_wsFPS);
 
   _server.begin();
@@ -95,7 +126,6 @@ void MyWebServer::setupServer() {
 
 void MyWebServer::handleLoop() {
   handleStream();
-  //handleFPS();
 
   _wsCam.cleanupClients();
   _wsFPS.cleanupClients();
@@ -140,30 +170,67 @@ void MyWebServer::onEventCamera(
   switch (type) {
     case WS_EVT_CONNECT: 
       _clientID = client->id();
-      Serial.printf(" => WebSocket client #%u connected from %s\n", 
+      Serial.printf(" => WebSocket camera #%u connected from %s\n", 
         _clientID, client->remoteIP().toString().c_str()
       );
     break;
 
     case WS_EVT_DISCONNECT: 
       _clientID = 0;
-      Serial.printf(" => WebSocket client #%u disconnected\n", client->id());
+      Serial.printf(" => WebSocket camera #%u disconnected\n", client->id());
+    break;
+
+    case WS_EVT_DATA:
+      // No data expected for the camera stream WebSocket
+    break;
+
+    default: break;
+  }
+}
+
+void MyWebServer::onEventMotor(
+  AsyncWebSocket        * server, 
+  AsyncWebSocketClient  * client, 
+  AwsEventType            type, 
+  void                  * arg, 
+  uint8_t               * data, 
+  size_t                  len
+) {
+  switch (type) {
+    case WS_EVT_CONNECT: 
+      _clientID = client->id();
+      Serial.printf(" => WebSocket motor #%u connected from %s\n", 
+        _clientID, client->remoteIP().toString().c_str()
+      );
+    break;
+
+    case WS_EVT_DISCONNECT: 
+      _clientID = 0;
+      Serial.printf(" => WebSocket motor #%u disconnected\n", client->id());
     break;
 
     case WS_EVT_DATA: {
-      AwsFrameInfo * info = (AwsFrameInfo*)arg;
-      if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
-        String msg = (char*)data;
-        if (msg.indexOf("ack") >= 0) {
-          _open = true;
+      AwsFrameInfo * info = (AwsFrameInfo*) arg;
+      if (info->final 
+        && info->index  == 0 
+        && info->len    == len 
+        && info->opcode == WS_TEXT
+      ) {
+        String msg = "";
+
+        for (size_t i = 0; i < len; i++) {
+          msg += (char)data[i];
         }
+
+        if      (msg == "D") { _mot.forward();  }
+        else if (msg == "R") { _mot.backward(); }
+        else if (msg == "N") { _mot.breaks();   } 
       }
     } break;
 
     default: break;
   }
 }
-
 
 void MyWebServer::handleStream() {
   if (_clientID == 0 || _wsCam.client(_clientID)->queueIsFull())

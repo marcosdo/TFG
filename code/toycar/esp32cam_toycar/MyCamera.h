@@ -73,6 +73,9 @@ bool MyCamera::initCamera() {
     Serial.printf(" <ERROR> Camera init failed with error 0x%x", _err);
     return false;
   }
+
+  startStream();
+
   return true;
 }
 
