@@ -1,8 +1,10 @@
 #ifndef DEFINITIONS_H
 #define DEFINITIONS_H
 
-#define CAMERA_MODEL_AI_THINKER // Has PSRAM
-
+// ===========================
+// CAMERA
+// ===========================
+#define CAMERA_MODEL_AI_THINKER
 #if defined(CAMERA_MODEL_AI_THINKER)
   #define PWDN_GPIO_NUM  32
   #define RESET_GPIO_NUM -1
@@ -26,5 +28,18 @@
 #else
   #error "Camera model not selected"
 #endif
+
+// ===========================
+// MOTOR
+// ===========================
+#define MOTOR_START 1
+#define MOTOR_STOP  0
+#define GO_FORWARD  1
+#define GO_BACKWARD 0
+#define MAX_SPEED   255
+#define MIN_SPEED   0
+#define MAX_ACCELERATION  3
+#define MIN_ACCELERATION  1
+
 
 #endif
