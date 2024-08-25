@@ -55,7 +55,7 @@ MyMotor::MyMotor(int GPIO_BridgeDrive, int GPIO_BridgeReverse, int GPIO_BridgeSt
   _accel(MIN_ACCELERATION),
   _direc(GO_FORWARD),
   _freqz(1000),
-  _rsltn(8),
+  _rsltn(8)
  {}
 
 // ===========================
@@ -74,45 +74,45 @@ void MyMotor::setupMotor() {
   lock();
 }
 
-void MyMotor::forward() {
+void MyMotor::forward(int speed) {
   digitalWrite(_bridgeDrive, HIGH);
   digitalWrite(_bridgeRevrs, LOW);
-  rampTo(MAX_SPEED);
+  rampTo(speed);
 }
 
-void MyMotor::backward() {
+void MyMotor::backward(int speed) {
   digitalWrite(_bridgeDrive, LOW);
   digitalWrite(_bridgeRevrs, HIGH);
-  rampTo(MAX_SPEED);
+  rampTo(speed);
 }
 
-void MyMotor::breaks() {
+void MyMotor::breaks(int speed) {
   digitalWrite(_bridgeDrive, LOW);
   digitalWrite(_bridgeRevrs, LOW);
-  rampTo(MIN_SPEED);
+  rampTo(speed);
 }
 
-void MyMotor::lock() {
+void MyMotor::lock(int speed) {
   digitalWrite(_bridgeDrive, LOW);
   digitalWrite(_bridgeRevrs, LOW);
-  setSpeed(MIN_SPEED);
+  setSpeed(speed);
 }
 
-void MyMotor::rampTo(int targetSpeed, int delay) {
+void MyMotor::rampTo(int targetSpeed, int delayTotal) {
   int startSpeed = _speed;
   int increment = (targetSpeed > startSpeed) ? _accel : -_accel;
   int steps = abs(targetSpeed - startSpeed);
-  int delayPerStep = (steps > 0) ? delay / steps : delay;
+  int delayPerStep = (steps > 0) ? delayTotal / steps : delayTotal;
 
   for (int i = 0; i <= steps; i++) {
     setSpeed(startSpeed + i * increment);
-    delay(delayTime);
+    delay(delayPerStep);
   }
   setSpeed(targetSpeed);
 }
 
 void MyMotor::setSpeed(int newSpeed) {
-  _speed = constrain(targetSpeed, -255, 255);
+  _speed = constrain(newSpeed, -255, 255);
   ledcWrite(_bridgeStart, abs(_speed));
 }
 
