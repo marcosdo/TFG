@@ -75,7 +75,7 @@ bool MyCamera::initCamera() {
   }
 
   startStream();
-
+  
   return true;
 }
 

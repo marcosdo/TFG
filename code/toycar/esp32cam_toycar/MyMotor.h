@@ -86,6 +86,9 @@ void MyMotor::lock(int speed) {
   digitalWrite(_bridgeRevrs, LOW);
 }
 
+// ===========================
+// Private methods
+// ===========================
 void MyMotor::rampTo(int targetSpeed, int delayTotal) {
   int startSpeed = _speed;
   int increment = (targetSpeed > startSpeed) ? _accel : -_accel;

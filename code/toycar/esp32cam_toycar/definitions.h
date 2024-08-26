@@ -32,14 +32,23 @@
 // ===========================
 // MOTOR
 // ===========================
-#define MOTOR_START 1
-#define MOTOR_STOP  0
-#define GO_FORWARD  1
-#define GO_BACKWARD 0
-#define MAX_SPEED   255
-#define MIN_SPEED   0
-#define MAX_ACCELERATION  3
-#define MIN_ACCELERATION  1
 
+  #define MOTOR_START 1
+  #define MOTOR_STOP  0
+  #define GO_FORWARD  1
+  #define GO_BACKWARD 0
+  #define MAX_SPEED   255
+  #define MIN_SPEED   0
+  #define MAX_ACCELERATION  3
+  #define MIN_ACCELERATION  1
+
+
+// ===========================
+// SERVO
+// ===========================
+
+  #define MAX_ANGLE 180
+  #define MID_ANGLE 90
+  #define MIN_ANGLE 0
 
 #endif

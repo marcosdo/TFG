@@ -20,8 +20,8 @@ R"rawliteral(
   </div>
   <div id="controls">
     <button id="arrow-button" style="grid-area: 1 / 2;" onmousedown="sendCMD('D')" onmouseup="sendCMD('N')">▲</button>
-    <button id="arrow-button" style="grid-area: 2 / 1;">◄</button>
-    <button id="arrow-button" style="grid-area: 2 / 3;">►</button>
+    <button id="arrow-button" style="grid-area: 2 / 1;" onmousedown="sendCMD('L')" onmouseup="sendCMD('M')">◄</button>
+    <button id="arrow-button" style="grid-area: 2 / 3;" onmousedown="sendCMD('S')" onmouseup="sendCMD('M')">►</button>
     <button id="arrow-button" style="grid-area: 2 / 2;" onmousedown="sendCMD('R')" onmouseup="sendCMD('N')">▼</button>
   </div>
   <div id ="show-fps">
@@ -31,17 +31,59 @@ R"rawliteral(
   <script>
     var wsCam;
     var wsMotor;
+    var wsServo;
 
     var wsCamURL = "ws://" + window.location.hostname + "/wsCam";
     var wsMotorURL = "ws://" + window.location.hostname + "/wsMot";
+    var wsServoURL = "ws://" + window.location.hostname + "/wsSer";
 
     var url = null;
     
     function sendCMD(command) {
       console.log(" => sendCMD(..): " + command);
-      if (wsMotor.readyState === WebSocket.OPEN) {
-        wsMotor.send(command);
+
+      switch (command) {
+        case "D":
+        case "R":
+        case "N":
+          if (wsMotor.readyState === WebSocket.OPEN) {
+            wsMotor.send(command);
+          }
+        break;
+
+        case "L":
+        case "S":
+        case "M":
+          if (wsServo.readyState === WebSocket.OPEN) {
+            wsServo.send(command);
+          }
+        break;
+
+        default:
+          console.error("Did not recognize: " + command);
+        break;
       }
+    }
+
+    function initWebSockServo() {
+      wsServo = new WebSocket(wsServoURL);
+
+      wsServo.onopen  = function(event) {
+        console.log(" => wsServo connection opened");
+      };
+
+      wsServo.onclose = function(event) {
+        console.log(" => wsServo connection closed");
+        setTimeout(initWebSockServo, 2000);
+      };
+
+      wsServo.onmessage = function(event) {
+        console.log("Mensaje recibido: " + event.data);
+      };
+
+      wsServo.onerror = function(error) {
+        console.log(" => wsServo error: " + error.message);
+      };
     }
 
     function initWebSockMotor() {
@@ -52,7 +94,7 @@ R"rawliteral(
       };
 
       wsMotor.onclose = function(event) {
-        console.log(" => wsMot connection closed");
+        console.log(" => wsMotor connection closed");
         setTimeout(initWebSockMotor, 2000);
       };
 
@@ -61,7 +103,7 @@ R"rawliteral(
       };
 
       wsMotor.onerror = function(error) {
-        console.log(" => wsMot error: " + error.message);
+        console.log(" => wsMotor error: " + error.message);
       };
     }
 
@@ -97,6 +139,7 @@ R"rawliteral(
     function initWebSock() {
       initWebSockCam();
       initWebSockMotor();
+      initWebSockServo();
     }
 
     window.onload = initWebSock;
