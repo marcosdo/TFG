@@ -32,10 +32,12 @@ R"rawliteral(
     var wsCam;
     var wsMotor;
     var wsServo;
+    var wsLog;
 
     var wsCamURL = "ws://" + window.location.hostname + "/wsCam";
     var wsMotorURL = "ws://" + window.location.hostname + "/wsMot";
     var wsServoURL = "ws://" + window.location.hostname + "/wsSer";
+    var wsLogURL = "ws://" + window.location.hostname + "/wsLog";
 
     var url = null;
     
@@ -65,6 +67,27 @@ R"rawliteral(
       }
     }
 
+    function initWebSockLog() {
+      wsLog = new WebSocket(wsLogURL);
+
+      wsLog.onopen  = function(event) {
+        console.log(" => wsLog connection opened");
+      };
+
+      wsLog.onclose = function(event) {
+        console.log(" => wsLog connection closed");
+        setTimeout(initWebSockLog, 2000);
+      };
+
+      wsLog.onmessage = function(event) {
+        console.log("Log Message: " + event.data);
+      };
+
+      wsLog.onerror = function(error) {
+        console.log(" => wsLog error: " + error.message);
+      };
+    }
+  
     function initWebSockServo() {
       wsServo = new WebSocket(wsServoURL);
 
@@ -140,6 +163,7 @@ R"rawliteral(
       initWebSockCam();
       initWebSockMotor();
       initWebSockServo();
+      initWebSockLog();
     }
 
     window.onload = initWebSock;

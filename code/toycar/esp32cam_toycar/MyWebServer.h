@@ -19,6 +19,7 @@ private:
   AsyncWebSocket  _wsCam;   // WebSocket Camera
   AsyncWebSocket  _wsMot;   // WebSocket Motor
   AsyncWebSocket  _wsSer;   // WebSocket Servo
+  AsyncWebSocket  _wsLog;
 
   MyCamera      & _cam;     // Camera
   MyMotor       & _mot;     // Motor
@@ -31,12 +32,14 @@ private:
 
   int             _clientID;  // Conection - Client ID
 
+  String          _msg;
 public:
   MyWebServer(MyCamera &cam, MyMotor &mot, MyServo &ser, int port = 80);
   ~MyWebServer() {};
 
   void setupServer();
   void handleLoop();
+  void logMessage(String message);
 
 private:
   void handle_html(AsyncWebServerRequest *request);
@@ -75,6 +78,14 @@ private:
     uint8_t               * data, 
     size_t                  len
   );
+  void onEventLog(
+    AsyncWebSocket        * server, 
+    AsyncWebSocketClient  * client, 
+    AwsEventType            type, 
+    void                  * arg, 
+    uint8_t               * data, 
+    size_t                  len
+  );
 };
 
 // ===========================
@@ -85,6 +96,7 @@ MyWebServer::MyWebServer(MyCamera &cam, MyMotor &mot, MyServo &ser, int port) :
   _wsCam("/wsCam"), 
   _wsMot("/wsMot"),
   _wsSer("/wsSer"), 
+  _wsLog("/wsLog"),
   _cam(cam),
   _mot(mot),
   _ser(ser),
@@ -92,7 +104,8 @@ MyWebServer::MyWebServer(MyCamera &cam, MyMotor &mot, MyServo &ser, int port) :
   _lastFrameTime(0), 
   _sum(0), 
   _iter(1),
-  _clientID(0)
+  _clientID(0),
+  _msg("")
 { }
 
 // ===========================
@@ -141,10 +154,23 @@ void MyWebServer::setupServer() {
       this->onEventServo(server, client, type, arg, data, len);
     }
   );
-  
+  _wsLog.onEvent(
+    [this](
+      AsyncWebSocket        * server,
+      AsyncWebSocketClient  * client, 
+      AwsEventType            type, 
+      void                  * arg, 
+      uint8_t               * data, 
+      size_t                  len
+    ) {
+      this->onEventLog(server, client, type, arg, data, len);
+    }
+  );
+
   _server.addHandler(&_wsCam);
   _server.addHandler(&_wsMot);
   _server.addHandler(&_wsSer);
+  _server.addHandler(&_wsLog);
 
   _server.begin();
 }
@@ -155,23 +181,36 @@ void MyWebServer::handleLoop() {
   _wsCam.cleanupClients();
   _wsMot.cleanupClients();
   _wsSer.cleanupClients();
+  _wsLog.cleanupClients();
+}
+
+void MyWebServer::logMessage(String message) {
+  if (_wsLog.count() > 0) {
+    _wsLog.textAll(message);
+  }
 }
 
 // ===========================
 // Private methods
 // ===========================
 void MyWebServer::handle_html(AsyncWebServerRequest *request) {
-  Serial.println(" => Access to '/' - handle_html(..)");
+  _msg = " => Access to '/' - handle_html(..)";
+  Serial.println(_msg);
+  logMessage(_msg);
   request->send(200, "text/html", index_html);
 }
 
 void MyWebServer::handle_ico(AsyncWebServerRequest *request) {
-  Serial.println(" => Access to '/favicon.ico' - handle_ico(..)");
+  _msg = " => Access to '/favicon.ico' - handle_ico(..)";
+  Serial.println(_msg);
+  logMessage(_msg);
   request->send_P(200, "image/x-icon", favicon_ico, sizeof(favicon_ico));
 }
 
 void MyWebServer::handle_css(AsyncWebServerRequest *request) {
-  Serial.println(" => Access to '/style.css' - handle_css(..)");
+  _msg = " => Access to '/style.css' - handle_css(..)";
+  Serial.println(_msg);
+  logMessage(_msg);
   request->send_P(200, "text/css", style_css);
 }
 
@@ -196,6 +235,7 @@ void MyWebServer::onEventCamera(
   switch (type) {
     case WS_EVT_CONNECT: 
       _clientID = client->id();
+      logMessage(" => WebSocket camera connected");
       Serial.printf(" => WebSocket camera #%u connected from %s\n", 
         _clientID, client->remoteIP().toString().c_str()
       );
@@ -203,6 +243,7 @@ void MyWebServer::onEventCamera(
 
     case WS_EVT_DISCONNECT: 
       _clientID = 0;
+      logMessage(" => WebSocket camera disconnected");
       Serial.printf(" => WebSocket camera #%u disconnected\n", client->id());
     break;
 
@@ -225,6 +266,7 @@ void MyWebServer::onEventMotor(
   switch (type) {
     case WS_EVT_CONNECT: 
       _clientID = client->id();
+      logMessage(" => WebSocket motor connected");
       Serial.printf(" => WebSocket motor #%u connected from %s\n", 
         _clientID, client->remoteIP().toString().c_str()
       );
@@ -232,6 +274,7 @@ void MyWebServer::onEventMotor(
 
     case WS_EVT_DISCONNECT: 
       _clientID = 0;
+      logMessage(" => WebSocket motor disconnected");
       Serial.printf(" => WebSocket motor #%u disconnected\n", client->id());
     break;
 
@@ -269,6 +312,7 @@ void MyWebServer::onEventServo(
   switch (type) {
     case WS_EVT_CONNECT: 
       _clientID = client->id();
+      logMessage(" => WebSocket servo connected");
       Serial.printf(" => WebSocket servo #%u connected from %s\n", 
         _clientID, client->remoteIP().toString().c_str()
       );
@@ -276,6 +320,7 @@ void MyWebServer::onEventServo(
 
     case WS_EVT_DISCONNECT: 
       _clientID = 0;
+      logMessage(" => WebSocket servo disconnected");
       Serial.printf(" => WebSocket servo #%u disconnected\n", client->id());
     break;
 
@@ -297,6 +342,35 @@ void MyWebServer::onEventServo(
         else if (msg == "M") { _ser.center(); } 
       }
     } break;
+
+    default: break;
+  }
+}
+
+void MyWebServer::onEventLog(
+  AsyncWebSocket        * server, 
+  AsyncWebSocketClient  * client, 
+  AwsEventType            type, 
+  void                  * arg, 
+  uint8_t               * data, 
+  size_t                  len
+) {
+  switch (type) {
+    case WS_EVT_CONNECT: 
+      logMessage(" => WebSocket log connected");
+      Serial.printf(" => WebSocket log #%u connected from %s\n", 
+        client->id(), client->remoteIP().toString().c_str()
+      );
+    break;
+
+    case WS_EVT_DISCONNECT: 
+    logMessage(" => WebSocket log disconnected");
+      Serial.printf(" => WebSocket log #%u disconnected\n", client->id());
+    break;
+
+    case WS_EVT_DATA:
+      // No data expected for the log WebSocket
+    break;
 
     default: break;
   }

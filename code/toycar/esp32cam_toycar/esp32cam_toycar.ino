@@ -20,6 +20,7 @@ MyMotor   mot(pinForward, pinBackward, pinEnaleMotor);
 
 MyWebServer mws(cam, mot, srv, port);
 
+String msg = "";
 
 void setup() {
   Serial.begin(115200);
@@ -47,19 +48,25 @@ void setup() {
     Serial.println(" <ERROR> Initializing camera");
     return;
   }
-  Serial.println("\n => Initiated camera");
+  msg = "\n => Initiated camera";
+  Serial.println(msg);
+  mws.logMessage(msg);
 
   // ===========================
   // Setting up the motor
   // ===========================
   mot.setupMotor();
-  Serial.println(" => Initiated motor");
+  msg = " => Initiated motor";
+  Serial.println(msg);
+  mws.logMessage(msg);
 
   // ===========================
   // Setting up the servo
   // ===========================
   srv.setupServo();
-  Serial.println(" => Initiated servo\n");
+  msg = " => Initiated servo\n";
+  Serial.println(msg);
+  mws.logMessage(msg);
 }
 
 void loop() {

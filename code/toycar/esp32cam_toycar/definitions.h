@@ -47,7 +47,7 @@
 // SERVO
 // ===========================
 
-  #define MAX_ANGLE 180
+  #define MAX_ANGLE 179
   #define MID_ANGLE 90
   #define MIN_ANGLE 0
 

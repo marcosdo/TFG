@@ -80,6 +80,8 @@ void MyServo::sweep(int delayTime) {
     angle(pos);
     delay(delayTime);
   }
+  left();
+  right();
   center();
 }
 
